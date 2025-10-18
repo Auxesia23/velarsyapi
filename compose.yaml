@@ -1,0 +1,25 @@
+services:
+  app:
+    build: .
+    container_name: velarsyapi
+    env_file: .env.docker
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: velarsy_user
+      POSTGRES_PASSWORD: velarsy_password
+      POSTGRES_DB: velarsy
+    expose:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+    driver: local
