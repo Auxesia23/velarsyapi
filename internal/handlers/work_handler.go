@@ -40,7 +40,9 @@ func (h *workHandler) CreateWorkHandler(c *fiber.Ctx) error {
 
 	work, err := h.workService.CreateWork(c.Context(), &title, &file)
 	if err != nil {
-		return fiber.ErrInternalServerError
+		return c.Status(500).JSON(fiber.Map{
+			"msg": err.Error(),
+		})
 	}
 	return c.JSON(work)
 }
@@ -55,7 +57,6 @@ func (h *workHandler) GetAllWorkHandler(c *fiber.Ctx) error {
 
 func (h *workHandler) GetSingleWorkHandler(c *fiber.Ctx) error {
 	slug := c.Params("work_slug")
-	
 
 	work, err := h.workService.GetOneWork(c.Context(), &slug)
 	if err != nil {

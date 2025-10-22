@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"mime/multipart"
+	"os"
 
 	"github.com/Auxesia23/velarsyapi/internal/dto"
 	"github.com/Auxesia23/velarsyapi/internal/repositories"
@@ -26,7 +27,22 @@ func NewProjectService(projectRepository repositories.ProjectRepository, imageRe
 }
 
 func (s *projectService) CreateProject(ctx context.Context, project *dto.ProjectRequest, image *multipart.File, workId *uint) (*dto.ProjectResponse, error) {
-	thumbnailUrl, err := s.imageRepository.Upload(ctx, image)
+	webpFileName, err := utils.ToWebp(image)
+	if err != nil {
+		return nil, err
+	}
+
+	webpFile, err := os.Open(webpFileName)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		_ = webpFile.Close()
+		_ = os.Remove(webpFileName)
+	}()
+
+	thumbnailUrl, err := s.imageRepository.Upload(ctx, webpFile)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +96,22 @@ func (s *projectService) GetSingleProject(ctx context.Context, slug *string) (*d
 }
 
 func (s *projectService) UpdateProject(ctx context.Context, project *dto.ProjectRequest, image *multipart.File, id *uint) (*dto.ProjectDetailResponse, error) {
-	imageUrl, err := s.imageRepository.Upload(ctx, image)
+	webpFileName, err := utils.ToWebp(image)
+	if err != nil {
+		return nil, err
+	}
+
+	webpFile, err := os.Open(webpFileName)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		webpFile.Close()
+		_ = os.Remove(webpFileName)
+	}()
+
+	imageUrl, err := s.imageRepository.Upload(ctx, webpFile)
 	if err != nil {
 		return nil, err
 	}

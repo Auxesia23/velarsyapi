@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"mime/multipart"
+	"os"
 	"time"
 
 	"github.com/Auxesia23/velarsyapi/internal/models"
@@ -14,7 +14,7 @@ import (
 )
 
 type ImageRepository interface {
-	Upload(ctx context.Context, file *multipart.File) (*string, error)
+	Upload(ctx context.Context, file *os.File) (*string, error)
 	Create(ctx context.Context, projectId *uint, url *string) (*models.Image, error)
 	GetByProjectID(ctx context.Context, projectId *uint) (*[]models.Image, error)
 	Delete(ctx context.Context, id *uint) error
@@ -29,8 +29,8 @@ func NewImageRepository(cld *cloudinary.Cloudinary, db *gorm.DB) ImageRepository
 	return &imageRepository{cld, db}
 }
 
-func (r *imageRepository) Upload(ctx context.Context, file *multipart.File) (*string, error) {
-	resp, err := r.cld.Upload.Upload(ctx, *file, uploader.UploadParams{
+func (r *imageRepository) Upload(ctx context.Context, file *os.File) (*string, error) {
+	resp, err := r.cld.Upload.Upload(ctx, file, uploader.UploadParams{
 		PublicID: fmt.Sprintf("upload-%d", time.Now().UnixMilli()),
 	})
 	if err != nil {

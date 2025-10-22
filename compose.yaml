@@ -1,6 +1,6 @@
 services:
   app:
-    build: .
+    image: localhost/velarsyapi:latest
     container_name: velarsyapi
     env_file: .env.docker
     ports:

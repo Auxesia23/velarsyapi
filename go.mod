@@ -3,6 +3,7 @@ module github.com/Auxesia23/velarsyapi
 go 1.25.1
 
 require (
+	github.com/chai2010/webp v1.4.0
 	github.com/cloudinary/cloudinary-go/v2 v2.13.0
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/golang-jwt/jwt/v5 v5.3.0
