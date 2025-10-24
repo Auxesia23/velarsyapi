@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Slugify the given string
 func ToSlug(title string) string {
 	slug := strings.ToLower(title)
 

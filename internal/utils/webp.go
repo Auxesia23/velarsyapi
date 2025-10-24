@@ -1,30 +1,23 @@
 package utils
 
 import (
-	"errors"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
-	"mime/multipart"
-	"os"
+	"io"
 
 	"github.com/chai2010/webp"
 )
 
-func ToWebp(file *multipart.File) (string, error) {
-	img, _, err := image.Decode(*file)
+// ToWebp convert image into a webp format.
+// It receive two parameters, data is the data to be converted and
+// dest is a destination for the new converted data to be writen to.
+// If there is an error, it will return error, otherwise it return nil
+func ToWebp(data io.Reader, dest io.Writer) error {
+	img, _, err := image.Decode(data)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	output, err := os.CreateTemp("", "image-*.webp")
-	if err != nil {
-		return "", errors.New("Failed to create temporary file")
-	}
-	defer output.Close()
-
-	if err := webp.Encode(output, img, &webp.Options{Lossless: false, Quality: 80}); err != nil {
-		return "", errors.New("Failed to encode image")
-	}
-	return output.Name(), nil
+	return webp.Encode(dest, img, &webp.Options{Lossless: false, Quality: 80})
 }

@@ -1,9 +1,9 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"mime/multipart"
-	"os"
 
 	"github.com/Auxesia23/velarsyapi/internal/dto"
 	"github.com/Auxesia23/velarsyapi/internal/repositories"
@@ -24,22 +24,11 @@ func NewImageService(imageRepository repositories.ImageRepository) ImageService 
 }
 
 func (s *imageService) CreateImage(ctx context.Context, file *multipart.File, projectId *uint) (*dto.ImageResponse, error) {
-	webpFileName, err := utils.ToWebp(file)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := utils.ToWebp(*file, &buf); err != nil {
 		return nil, err
 	}
-
-	webpFile, err := os.Open(webpFileName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		_ = webpFile.Close()
-		_ = os.Remove(webpFileName)
-	}()
-
-	url, err := s.imageRepository.Upload(ctx, webpFile)
+	url, err := s.imageRepository.Upload(ctx, &buf)
 	if err != nil {
 		return nil, err
 	}

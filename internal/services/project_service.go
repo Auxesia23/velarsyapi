@@ -1,9 +1,9 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"mime/multipart"
-	"os"
 
 	"github.com/Auxesia23/velarsyapi/internal/dto"
 	"github.com/Auxesia23/velarsyapi/internal/repositories"
@@ -27,29 +27,17 @@ func NewProjectService(projectRepository repositories.ProjectRepository, imageRe
 }
 
 func (s *projectService) CreateProject(ctx context.Context, project *dto.ProjectRequest, image *multipart.File, workId *uint) (*dto.ProjectResponse, error) {
-	webpFileName, err := utils.ToWebp(image)
+	var buf bytes.Buffer
+	if err := utils.ToWebp(*image, &buf); err != nil {
+		return nil, err
+	}
+	url, err := s.imageRepository.Upload(ctx, &buf)
 	if err != nil {
 		return nil, err
 	}
-
-	webpFile, err := os.Open(webpFileName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		_ = webpFile.Close()
-		_ = os.Remove(webpFileName)
-	}()
-
-	thumbnailUrl, err := s.imageRepository.Upload(ctx, webpFile)
-	if err != nil {
-		return nil, err
-	}
-
 	slug := utils.ToSlug(project.Name)
 
-	createdProject, err := s.projectRepository.Create(ctx, project, thumbnailUrl, &slug, workId)
+	createdProject, err := s.projectRepository.Create(ctx, project, url, &slug, workId)
 	if err != nil {
 		return nil, err
 	}
@@ -96,29 +84,18 @@ func (s *projectService) GetSingleProject(ctx context.Context, slug *string) (*d
 }
 
 func (s *projectService) UpdateProject(ctx context.Context, project *dto.ProjectRequest, image *multipart.File, id *uint) (*dto.ProjectDetailResponse, error) {
-	webpFileName, err := utils.ToWebp(image)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := utils.ToWebp(*image, &buf); err != nil {
 		return nil, err
 	}
-
-	webpFile, err := os.Open(webpFileName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		webpFile.Close()
-		_ = os.Remove(webpFileName)
-	}()
-
-	imageUrl, err := s.imageRepository.Upload(ctx, webpFile)
+	url, err := s.imageRepository.Upload(ctx, &buf)
 	if err != nil {
 		return nil, err
 	}
 
 	slug := utils.ToSlug(project.Name)
 
-	updatedProject, err := s.projectRepository.Update(ctx, project, imageUrl, &slug, id)
+	updatedProject, err := s.projectRepository.Update(ctx, project, url, &slug, id)
 	if err != nil {
 		return nil, err
 	}

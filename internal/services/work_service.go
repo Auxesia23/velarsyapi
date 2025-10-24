@@ -1,9 +1,9 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"mime/multipart"
-	"os"
 
 	"github.com/Auxesia23/velarsyapi/internal/dto"
 	"github.com/Auxesia23/velarsyapi/internal/repositories"
@@ -37,22 +37,11 @@ func NewWorkService(
 }
 
 func (s *workService) CreateWork(ctx context.Context, title *string, file *multipart.File) (*dto.WorkResponse, error) {
-	webpFileName, err := utils.ToWebp(file)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := utils.ToWebp(*file, &buf); err != nil {
 		return nil, err
 	}
-
-	webpFile, err := os.Open(webpFileName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		_ = webpFile.Close()
-		_ = os.Remove(webpFileName)
-	}()
-
-	url, err := s.imageRepository.Upload(ctx, webpFile)
+	url, err := s.imageRepository.Upload(ctx, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -124,25 +113,15 @@ func (s *workService) GetOneWork(ctx context.Context, slug *string) (*dto.WorkDe
 }
 
 func (s *workService) UpdateWork(ctx context.Context, title *string, file *multipart.File, id *uint) (*dto.WorkResponse, error) {
-	webpFileName, err := utils.ToWebp(file)
+	var buf bytes.Buffer
+	if err := utils.ToWebp(*file, &buf); err != nil {
+		return nil, err
+	}
+	url, err := s.imageRepository.Upload(ctx, &buf)
 	if err != nil {
 		return nil, err
 	}
 
-	webpFile, err := os.Open(webpFileName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		_ = webpFile.Close()
-		_ = os.Remove(webpFileName)
-	}()
-
-	url, err := s.imageRepository.Upload(ctx, webpFile)
-	if err != nil {
-		return nil, err
-	}
 	newSlug := utils.ToSlug(*title)
 	updatedWork, err := s.workRepository.Update(ctx, title, url, &newSlug, id)
 	if err != nil {
