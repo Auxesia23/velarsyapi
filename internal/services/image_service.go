@@ -3,7 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
-	"mime/multipart"
+	"io"
 
 	"github.com/Auxesia23/velarsyapi/internal/dto"
 	"github.com/Auxesia23/velarsyapi/internal/repositories"
@@ -11,8 +11,8 @@ import (
 )
 
 type ImageService interface {
-	CreateImage(ctx context.Context, file *multipart.File, projectId *uint) (*dto.ImageResponse, error)
-	Delete(ctx context.Context, id *uint) error
+	CreateImage(ctx context.Context, file io.Reader, projectId uint) (*dto.ImageResponse, error)
+	Delete(ctx context.Context, id uint) error
 }
 
 type imageService struct {
@@ -23,9 +23,9 @@ func NewImageService(imageRepository repositories.ImageRepository) ImageService 
 	return &imageService{imageRepository: imageRepository}
 }
 
-func (s *imageService) CreateImage(ctx context.Context, file *multipart.File, projectId *uint) (*dto.ImageResponse, error) {
+func (s *imageService) CreateImage(ctx context.Context, file io.Reader, projectId uint) (*dto.ImageResponse, error) {
 	var buf bytes.Buffer
-	if err := utils.ToWebp(*file, &buf); err != nil {
+	if err := utils.ToWebp(file, &buf); err != nil {
 		return nil, err
 	}
 	url, err := s.imageRepository.Upload(ctx, &buf)
@@ -45,6 +45,6 @@ func (s *imageService) CreateImage(ctx context.Context, file *multipart.File, pr
 	return imageResponse, nil
 }
 
-func (s *imageService) Delete(ctx context.Context, id *uint) error {
+func (s *imageService) Delete(ctx context.Context, id uint) error {
 	return s.imageRepository.Delete(ctx, id)
 }

@@ -38,7 +38,7 @@ func (h *workHandler) CreateWorkHandler(c *fiber.Ctx) error {
 	}
 	defer file.Close()
 
-	work, err := h.workService.CreateWork(c.Context(), &title, &file)
+	work, err := h.workService.CreateWork(c.Context(), title, file)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"msg": err.Error(),
@@ -58,7 +58,7 @@ func (h *workHandler) GetAllWorkHandler(c *fiber.Ctx) error {
 func (h *workHandler) GetSingleWorkHandler(c *fiber.Ctx) error {
 	slug := c.Params("work_slug")
 
-	work, err := h.workService.GetOneWork(c.Context(), &slug)
+	work, err := h.workService.GetOneWork(c.Context(), slug)
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
@@ -67,11 +67,10 @@ func (h *workHandler) GetSingleWorkHandler(c *fiber.Ctx) error {
 
 func (h *workHandler) UpdateWorkHandler(c *fiber.Ctx) error {
 	id := c.Params("work_id")
-	idInt, err := strconv.Atoi(id)
+	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
-	idUint := uint(idInt)
 
 	title := c.FormValue("title")
 	fileHeader, err := c.FormFile("image")
@@ -85,7 +84,7 @@ func (h *workHandler) UpdateWorkHandler(c *fiber.Ctx) error {
 	}
 	defer file.Close()
 
-	updatedWork, err := h.workService.UpdateWork(c.Context(), &title, &file, &idUint)
+	updatedWork, err := h.workService.UpdateWork(c.Context(), title, file, uint(idUint))
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
@@ -94,13 +93,12 @@ func (h *workHandler) UpdateWorkHandler(c *fiber.Ctx) error {
 
 func (h *workHandler) DeleteWorkHandler(c *fiber.Ctx) error {
 	id := c.Params("work_id")
-	idInt, err := strconv.Atoi(id)
+	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
-	idUint := uint(idInt)
 
-	err = h.workService.DeleteWork(c.Context(), &idUint)
+	err = h.workService.DeleteWork(c.Context(), uint(idUint))
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}

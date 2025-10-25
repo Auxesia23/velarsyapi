@@ -10,8 +10,8 @@ import (
 type ServiceService interface {
 	CreateService(ctx context.Context, service *dto.ServiceRequest) (*dto.ServiceResponse, error)
 	GetAllServices(ctx context.Context) (*[]dto.ServiceResponse, error)
-	UpdateService(ctx context.Context, service *dto.ServiceRequest, id *uint) (*dto.ServiceResponse, error)
-	DeleteService(ctx context.Context, id *uint) error
+	UpdateService(ctx context.Context, service *dto.ServiceRequest, id uint) (*dto.ServiceResponse, error)
+	DeleteService(ctx context.Context, id uint) error
 }
 
 type serviceService struct {
@@ -59,13 +59,13 @@ func (s *serviceService) GetAllServices(ctx context.Context) (*[]dto.ServiceResp
 	return &response, nil
 }
 
-func (s *serviceService) UpdateService(ctx context.Context, service *dto.ServiceRequest, id *uint) (*dto.ServiceResponse, error) {
+func (s *serviceService) UpdateService(ctx context.Context, service *dto.ServiceRequest, id uint) (*dto.ServiceResponse, error) {
 	updatedService, err := s.serviceRepo.Update(ctx, service, id)
 	if err != nil {
 		return nil, err
 	}
 	response := &dto.ServiceResponse{
-		ID:          *id,
+		ID:          id,
 		Title:       updatedService.Title,
 		Description: updatedService.Description,
 		Icon:        updatedService.Icon,
@@ -73,7 +73,7 @@ func (s *serviceService) UpdateService(ctx context.Context, service *dto.Service
 	return response, nil
 }
 
-func (s *serviceService) DeleteService(ctx context.Context, id *uint) error {
+func (s *serviceService) DeleteService(ctx context.Context, id uint) error {
 	if err := s.serviceRepo.Delete(ctx, id); err != nil {
 		return err
 	}

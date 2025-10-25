@@ -28,16 +28,17 @@ func (h *projecthandler) CreateProjectHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
+
 	var input dto.ProjectRequest
 	if err := c.BodyParser(&input); err != nil {
 		return fiber.ErrBadRequest
 	}
+
 	workId := c.Params("work_id")
-	workIdInt, err := strconv.Atoi(workId)
+	workIdUint, err := strconv.ParseUint(workId, 10, 64)
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
-	workIdUint := uint(workIdInt)
 
 	fileHeader := form.File["image"]
 	if len(fileHeader) == 0 {
@@ -47,11 +48,9 @@ func (h *projecthandler) CreateProjectHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
-	createdProject, err := h.projectService.CreateProject(c.Context(), &input, &image, &workIdUint)
+	createdProject, err := h.projectService.CreateProject(c.Context(), &input, image, uint(workIdUint))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": err.Error(),
-		})
+		return fiber.ErrInternalServerError
 	}
 
 	return c.JSON(createdProject)
@@ -60,7 +59,7 @@ func (h *projecthandler) CreateProjectHandler(c *fiber.Ctx) error {
 func (h *projecthandler) GetSingleProjectHandler(c *fiber.Ctx) error {
 	slug := c.Params("project_slug")
 
-	project, err := h.projectService.GetSingleProject(c.Context(), &slug)
+	project, err := h.projectService.GetSingleProject(c.Context(), slug)
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
@@ -69,11 +68,11 @@ func (h *projecthandler) GetSingleProjectHandler(c *fiber.Ctx) error {
 
 func (h *projecthandler) UpdateProjectHandler(c *fiber.Ctx) error {
 	projectId := c.Params("project_id")
-	projectIdInt, err := strconv.Atoi(projectId)
+	projectIdUint, err := strconv.ParseUint(projectId, 10, 64)
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
-	projectIdUint := uint(projectIdInt)
+
 	form, err := c.MultipartForm()
 	if err != nil {
 		return fiber.ErrBadRequest
@@ -91,7 +90,7 @@ func (h *projecthandler) UpdateProjectHandler(c *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
-	updatedProject, err := h.projectService.UpdateProject(c.Context(), &input, &image, &projectIdUint)
+	updatedProject, err := h.projectService.UpdateProject(c.Context(), &input, image, uint(projectIdUint))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(err.Error())
 	}
@@ -100,12 +99,12 @@ func (h *projecthandler) UpdateProjectHandler(c *fiber.Ctx) error {
 
 func (h *projecthandler) DeleteProjectHandler(c *fiber.Ctx) error {
 	projectId := c.Params("project_id")
-	projectIdInt, err := strconv.Atoi(projectId)
+	projectIdUint, err := strconv.ParseUint(projectId, 10, 64)
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
-	projectIdUint := uint(projectIdInt)
-	err = h.projectService.DeleteProject(c.Context(), &projectIdUint)
+
+	err = h.projectService.DeleteProject(c.Context(), uint(projectIdUint))
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}

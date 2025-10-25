@@ -52,14 +52,14 @@ func (h *serviceHandler) UpdateServiceHandler(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
-	id := c.Params("id")
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	}
-	idUint := uint(idInt)
 
-	updatedService, err := h.serviceService.UpdateService(c.Context(), &input, &idUint)
+	id := c.Params("id")
+	idUint, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		return fiber.ErrBadRequest
+	}
+
+	updatedService, err := h.serviceService.UpdateService(c.Context(), &input, uint(idUint))
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -68,14 +68,13 @@ func (h *serviceHandler) UpdateServiceHandler(c *fiber.Ctx) error {
 }
 
 func (h *serviceHandler) DeleteServiceHandler(c *fiber.Ctx) error {
-	serviceID := c.Params("id")
-	idInt, err := strconv.Atoi(serviceID)
-	idUint := uint(idInt)
+	id := c.Params("id")
+	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		return fiber.ErrBadRequest
 	}
 
-	err = h.serviceService.DeleteService(c.Context(), &idUint)
+	err = h.serviceService.DeleteService(c.Context(), uint(idUint))
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}

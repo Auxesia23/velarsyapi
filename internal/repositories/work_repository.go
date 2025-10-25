@@ -9,11 +9,11 @@ import (
 )
 
 type WorkRepository interface {
-	Create(ctx context.Context, title, url, slug *string) (*models.OurWork, error)
+	Create(ctx context.Context, title, url, slug string) (*models.OurWork, error)
 	GetAll(ctx context.Context) (*[]models.OurWork, error)
-	GetOne(ctx context.Context, slug *string) (*models.OurWork, error)
-	Update(ctx context.Context, title, url, slug *string, id *uint) (*models.OurWork, error)
-	Delete(ctx context.Context, id *uint) error
+	GetOne(ctx context.Context, slug string) (*models.OurWork, error)
+	Update(ctx context.Context, title, url, slug string, id uint) (*models.OurWork, error)
+	Delete(ctx context.Context, id uint) error
 }
 
 type workRepository struct {
@@ -24,11 +24,11 @@ func NewWorkRepository(db *gorm.DB) WorkRepository {
 	return &workRepository{db: db}
 }
 
-func (r *workRepository) Create(ctx context.Context, title, url, slug *string) (*models.OurWork, error) {
+func (r *workRepository) Create(ctx context.Context, title, url, slug string) (*models.OurWork, error) {
 	ourWork := &models.OurWork{
-		Title: *title,
-		Image: *url,
-		Slug:  *slug,
+		Title: title,
+		Image: url,
+		Slug:  slug,
 	}
 
 	if err := r.db.WithContext(ctx).Create(ourWork).Error; err != nil {
@@ -46,7 +46,7 @@ func (r *workRepository) GetAll(ctx context.Context) (*[]models.OurWork, error) 
 	return &works, nil
 }
 
-func (r *workRepository) GetOne(ctx context.Context, slug *string) (*models.OurWork, error) {
+func (r *workRepository) GetOne(ctx context.Context, slug string) (*models.OurWork, error) {
 	var work models.OurWork
 	if err := r.db.WithContext(ctx).Where("slug = ?", slug).First(&work).Error; err != nil {
 		return nil, errors.New("Work get error")
@@ -54,11 +54,11 @@ func (r *workRepository) GetOne(ctx context.Context, slug *string) (*models.OurW
 	return &work, nil
 }
 
-func (r *workRepository) Update(ctx context.Context, title, url, slug *string, id *uint) (*models.OurWork, error) {
+func (r *workRepository) Update(ctx context.Context, title, url, slug string, id uint) (*models.OurWork, error) {
 	updatedWork := &models.OurWork{
-		Title: *title,
-		Image: *url,
-		Slug:  *slug,
+		Title: title,
+		Image: url,
+		Slug:  slug,
 	}
 	if err := r.db.WithContext(ctx).Model(&models.OurWork{}).Where("id = ?", id).Updates(updatedWork).Error; err != nil {
 		return nil, errors.New("Work update error")
@@ -66,7 +66,7 @@ func (r *workRepository) Update(ctx context.Context, title, url, slug *string, i
 	return updatedWork, nil
 }
 
-func (r *workRepository) Delete(ctx context.Context, id *uint) error {
+func (r *workRepository) Delete(ctx context.Context, id uint) error {
 	if err := r.db.WithContext(ctx).Delete(&models.OurWork{}, id).Error; err != nil {
 		return errors.New("Work delete error")
 	}

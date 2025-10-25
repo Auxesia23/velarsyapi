@@ -58,13 +58,10 @@ func (h *userHandler) GetAllUsersHandler(c *fiber.Ctx) error {
 
 func (h *userHandler) UpdateUserHandler(c *fiber.Ctx) error {
 	idStr := c.Params("id")
-	idInt, err := strconv.Atoi(idStr)
+	idUint, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid user ID",
-		})
+		return fiber.ErrBadRequest
 	}
-	idUint := uint(idInt)
 
 	var input dto.UserRequest
 	if err := c.BodyParser(&input); err != nil {
@@ -73,7 +70,7 @@ func (h *userHandler) UpdateUserHandler(c *fiber.Ctx) error {
 		})
 
 	}
-	user, err := h.userService.UpdateUser(c.Context(), &idUint, &input)
+	user, err := h.userService.UpdateUser(c.Context(), uint(idUint), &input)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -84,13 +81,12 @@ func (h *userHandler) UpdateUserHandler(c *fiber.Ctx) error {
 
 func (h *userHandler) DeleteUserHandler(c *fiber.Ctx) error {
 	idStr := c.Params("id")
-	idInt, err := strconv.Atoi(idStr)
+	idUint, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
-	idUint := uint(idInt)
 
-	err = h.userService.DeleteUser(c.Context(), &idUint)
+	err = h.userService.DeleteUser(c.Context(), uint(idUint))
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}

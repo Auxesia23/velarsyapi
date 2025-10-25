@@ -25,8 +25,10 @@ func NewImageHandler(imageService services.ImageService) ImageHandler {
 
 func (h *imageHandler) CreateImageHandler(c *fiber.Ctx) error {
 	projectId := c.Params("project_id")
-	projectIdInt, _ := strconv.Atoi(projectId)
-	projectidUint := uint(projectIdInt)
+	projectidUint, err := strconv.ParseUint(projectId, 10, 64)
+	if err != nil {
+		return fiber.ErrBadRequest
+	}
 
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -44,10 +46,11 @@ func (h *imageHandler) CreateImageHandler(c *fiber.Ctx) error {
 			return fiber.ErrBadRequest
 		}
 		defer file.Close()
-		image, err := h.imageService.CreateImage(c.Context(), &file, &projectidUint)
+		image, err := h.imageService.CreateImage(c.Context(), file, uint(projectidUint))
 		if err != nil {
 			return fiber.ErrInternalServerError
 		}
+
 		response = append(response, dto.ImageResponse{
 			URL: image.URL,
 		})
@@ -57,11 +60,13 @@ func (h *imageHandler) CreateImageHandler(c *fiber.Ctx) error {
 }
 
 func (h *imageHandler) DeleteImageHandler(c *fiber.Ctx) error {
-	imageId := c.Params("image_id")
-	imageIdInnt, _ := strconv.Atoi(imageId)
-	imageIdUint := uint(imageIdInnt)
+	projectId := c.Params("project_id")
+	imageIdUint, err := strconv.ParseUint(projectId, 10, 64)
+	if err != nil {
+		return fiber.ErrBadRequest
+	}
 
-	if err := h.imageService.Delete(c.Context(), &imageIdUint); err != nil {
+	if err := h.imageService.Delete(c.Context(), uint(imageIdUint)); err != nil {
 		return fiber.ErrInternalServerError
 	}
 	return c.Status(204).JSON(nil)

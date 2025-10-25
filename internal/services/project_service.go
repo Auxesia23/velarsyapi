@@ -3,7 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
-	"mime/multipart"
+	"io"
 
 	"github.com/Auxesia23/velarsyapi/internal/dto"
 	"github.com/Auxesia23/velarsyapi/internal/repositories"
@@ -11,10 +11,10 @@ import (
 )
 
 type ProjectService interface {
-	CreateProject(ctx context.Context, project *dto.ProjectRequest, image *multipart.File, workId *uint) (*dto.ProjectResponse, error)
-	GetSingleProject(ctx context.Context, slug *string) (*dto.ProjectDetailResponse, error)
-	UpdateProject(ctx context.Context, project *dto.ProjectRequest, image *multipart.File, id *uint) (*dto.ProjectDetailResponse, error)
-	DeleteProject(ctx context.Context, id *uint) error
+	CreateProject(ctx context.Context, project *dto.ProjectRequest, file io.Reader, workId uint) (*dto.ProjectResponse, error)
+	GetSingleProject(ctx context.Context, slug string) (*dto.ProjectDetailResponse, error)
+	UpdateProject(ctx context.Context, project *dto.ProjectRequest, file io.Reader, id uint) (*dto.ProjectDetailResponse, error)
+	DeleteProject(ctx context.Context, id uint) error
 }
 
 type projectService struct {
@@ -26,9 +26,9 @@ func NewProjectService(projectRepository repositories.ProjectRepository, imageRe
 	return &projectService{projectRepository, imageRepository}
 }
 
-func (s *projectService) CreateProject(ctx context.Context, project *dto.ProjectRequest, image *multipart.File, workId *uint) (*dto.ProjectResponse, error) {
+func (s *projectService) CreateProject(ctx context.Context, project *dto.ProjectRequest, image io.Reader, workId uint) (*dto.ProjectResponse, error) {
 	var buf bytes.Buffer
-	if err := utils.ToWebp(*image, &buf); err != nil {
+	if err := utils.ToWebp(image, &buf); err != nil {
 		return nil, err
 	}
 	url, err := s.imageRepository.Upload(ctx, &buf)
@@ -37,7 +37,7 @@ func (s *projectService) CreateProject(ctx context.Context, project *dto.Project
 	}
 	slug := utils.ToSlug(project.Name)
 
-	createdProject, err := s.projectRepository.Create(ctx, project, url, &slug, workId)
+	createdProject, err := s.projectRepository.Create(ctx, project, url, slug, workId)
 	if err != nil {
 		return nil, err
 	}
@@ -52,13 +52,13 @@ func (s *projectService) CreateProject(ctx context.Context, project *dto.Project
 	return response, nil
 }
 
-func (s *projectService) GetSingleProject(ctx context.Context, slug *string) (*dto.ProjectDetailResponse, error) {
+func (s *projectService) GetSingleProject(ctx context.Context, slug string) (*dto.ProjectDetailResponse, error) {
 	project, err := s.projectRepository.GetOne(ctx, slug)
 	if err != nil {
 		return nil, err
 	}
 
-	images, err := s.imageRepository.GetByProjectID(ctx, &project.ID)
+	images, err := s.imageRepository.GetByProjectID(ctx, project.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,9 +83,9 @@ func (s *projectService) GetSingleProject(ctx context.Context, slug *string) (*d
 	return response, nil
 }
 
-func (s *projectService) UpdateProject(ctx context.Context, project *dto.ProjectRequest, image *multipart.File, id *uint) (*dto.ProjectDetailResponse, error) {
+func (s *projectService) UpdateProject(ctx context.Context, project *dto.ProjectRequest, image io.Reader, id uint) (*dto.ProjectDetailResponse, error) {
 	var buf bytes.Buffer
-	if err := utils.ToWebp(*image, &buf); err != nil {
+	if err := utils.ToWebp(image, &buf); err != nil {
 		return nil, err
 	}
 	url, err := s.imageRepository.Upload(ctx, &buf)
@@ -95,12 +95,12 @@ func (s *projectService) UpdateProject(ctx context.Context, project *dto.Project
 
 	slug := utils.ToSlug(project.Name)
 
-	updatedProject, err := s.projectRepository.Update(ctx, project, url, &slug, id)
+	updatedProject, err := s.projectRepository.Update(ctx, project, url, slug, id)
 	if err != nil {
 		return nil, err
 	}
 	response := &dto.ProjectDetailResponse{
-		ID:              *id,
+		ID:              id,
 		Slug:            updatedProject.Slug,
 		Name:            updatedProject.Name,
 		Thumbnail:       updatedProject.Thumbnail,
@@ -110,7 +110,7 @@ func (s *projectService) UpdateProject(ctx context.Context, project *dto.Project
 	return response, nil
 }
 
-func (s *projectService) DeleteProject(ctx context.Context, id *uint) error {
+func (s *projectService) DeleteProject(ctx context.Context, id uint) error {
 	err := s.projectRepository.Delete(ctx, id)
 	if err != nil {
 		return err

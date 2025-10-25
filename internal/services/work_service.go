@@ -3,7 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
-	"mime/multipart"
+	"io"
 
 	"github.com/Auxesia23/velarsyapi/internal/dto"
 	"github.com/Auxesia23/velarsyapi/internal/repositories"
@@ -11,11 +11,11 @@ import (
 )
 
 type WorkService interface {
-	CreateWork(ctx context.Context, title *string, file *multipart.File) (*dto.WorkResponse, error)
+	CreateWork(ctx context.Context, title string, file io.Reader) (*dto.WorkResponse, error)
 	GetAllWork(ctx context.Context) (*[]dto.WorkResponse, error)
-	GetOneWork(ctx context.Context, slug *string) (*dto.WorkDetailResponse, error)
-	UpdateWork(ctx context.Context, title *string, file *multipart.File, id *uint) (*dto.WorkResponse, error)
-	DeleteWork(ctx context.Context, id *uint) error
+	GetOneWork(ctx context.Context, slug string) (*dto.WorkDetailResponse, error)
+	UpdateWork(ctx context.Context, title string, file io.Reader, id uint) (*dto.WorkResponse, error)
+	DeleteWork(ctx context.Context, id uint) error
 }
 
 type workService struct {
@@ -36,9 +36,9 @@ func NewWorkService(
 	}
 }
 
-func (s *workService) CreateWork(ctx context.Context, title *string, file *multipart.File) (*dto.WorkResponse, error) {
+func (s *workService) CreateWork(ctx context.Context, title string, file io.Reader) (*dto.WorkResponse, error) {
 	var buf bytes.Buffer
-	if err := utils.ToWebp(*file, &buf); err != nil {
+	if err := utils.ToWebp(file, &buf); err != nil {
 		return nil, err
 	}
 	url, err := s.imageRepository.Upload(ctx, &buf)
@@ -46,9 +46,9 @@ func (s *workService) CreateWork(ctx context.Context, title *string, file *multi
 		return nil, err
 	}
 
-	slug := utils.ToSlug(*title)
+	slug := utils.ToSlug(title)
 
-	work, err := s.workRepository.Create(ctx, title, url, &slug)
+	work, err := s.workRepository.Create(ctx, title, url, slug)
 	if err != nil {
 		return nil, err
 	}
@@ -80,13 +80,13 @@ func (s *workService) GetAllWork(ctx context.Context) (*[]dto.WorkResponse, erro
 	return &response, nil
 }
 
-func (s *workService) GetOneWork(ctx context.Context, slug *string) (*dto.WorkDetailResponse, error) {
+func (s *workService) GetOneWork(ctx context.Context, slug string) (*dto.WorkDetailResponse, error) {
 	work, err := s.workRepository.GetOne(ctx, slug)
 	if err != nil {
 		return nil, err
 	}
 
-	projects, err := s.projectRepository.GetByWorkID(ctx, &work.ID)
+	projects, err := s.projectRepository.GetByWorkID(ctx, work.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -112,9 +112,9 @@ func (s *workService) GetOneWork(ctx context.Context, slug *string) (*dto.WorkDe
 	return &workResponse, nil
 }
 
-func (s *workService) UpdateWork(ctx context.Context, title *string, file *multipart.File, id *uint) (*dto.WorkResponse, error) {
+func (s *workService) UpdateWork(ctx context.Context, title string, file io.Reader, id uint) (*dto.WorkResponse, error) {
 	var buf bytes.Buffer
-	if err := utils.ToWebp(*file, &buf); err != nil {
+	if err := utils.ToWebp(file, &buf); err != nil {
 		return nil, err
 	}
 	url, err := s.imageRepository.Upload(ctx, &buf)
@@ -122,13 +122,13 @@ func (s *workService) UpdateWork(ctx context.Context, title *string, file *multi
 		return nil, err
 	}
 
-	newSlug := utils.ToSlug(*title)
-	updatedWork, err := s.workRepository.Update(ctx, title, url, &newSlug, id)
+	newSlug := utils.ToSlug(title)
+	updatedWork, err := s.workRepository.Update(ctx, title, url, newSlug, id)
 	if err != nil {
 		return nil, err
 	}
 	response := &dto.WorkResponse{
-		ID:    *id,
+		ID:    id,
 		Slug:  updatedWork.Slug,
 		Title: updatedWork.Title,
 		Image: updatedWork.Image,
@@ -136,7 +136,7 @@ func (s *workService) UpdateWork(ctx context.Context, title *string, file *multi
 	return response, nil
 }
 
-func (s *workService) DeleteWork(ctx context.Context, id *uint) error {
+func (s *workService) DeleteWork(ctx context.Context, id uint) error {
 	err := s.workRepository.Delete(ctx, id)
 	if err != nil {
 		return err

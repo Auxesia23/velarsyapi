@@ -11,9 +11,9 @@ import (
 type UserService interface {
 	CreateUser(ctx context.Context, user *dto.UserRequest) (*dto.UserResponse, error)
 	GetAllUser(ctx context.Context) ([]*dto.UserResponse, error)
-	UpdateUser(ctx context.Context, id *uint, user *dto.UserRequest) (*dto.UserResponse, error)
-	DeleteUser(ctx context.Context, id *uint) error
-	LoginUser(ctx context.Context, user *dto.UserRequest) (*string, error)
+	UpdateUser(ctx context.Context, id uint, user *dto.UserRequest) (*dto.UserResponse, error)
+	DeleteUser(ctx context.Context, id uint) error
+	LoginUser(ctx context.Context, user *dto.UserRequest) (string, error)
 }
 
 type userService struct {
@@ -32,7 +32,7 @@ func (s *userService) CreateUser(ctx context.Context, user *dto.UserRequest) (*d
 		return nil, err
 	}
 
-	createdUser, err := s.userRepository.Create(ctx, &user.Username, &hashedPassword)
+	createdUser, err := s.userRepository.Create(ctx, user.Username, hashedPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -69,19 +69,19 @@ func (s *userService) GetAllUser(ctx context.Context) ([]*dto.UserResponse, erro
 	return responses, nil
 }
 
-func (s *userService) UpdateUser(ctx context.Context, id *uint, user *dto.UserRequest) (*dto.UserResponse, error) {
+func (s *userService) UpdateUser(ctx context.Context, id uint, user *dto.UserRequest) (*dto.UserResponse, error) {
 	hashedPassword, err := utils.HashPassword(user.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	updatedUser, err := s.userRepository.Update(ctx, id, &user.Username, &hashedPassword)
+	updatedUser, err := s.userRepository.Update(ctx, id, user.Username, hashedPassword)
 	if err != nil {
 		return nil, err
 	}
 
 	response := &dto.UserResponse{
-		ID:        *id,
+		ID:        id,
 		Username:  updatedUser.Username,
 		Password:  updatedUser.Password,
 		CreatedAt: updatedUser.CreatedAt,
@@ -91,7 +91,7 @@ func (s *userService) UpdateUser(ctx context.Context, id *uint, user *dto.UserRe
 	return response, nil
 }
 
-func (s *userService) DeleteUser(ctx context.Context, id *uint) error {
+func (s *userService) DeleteUser(ctx context.Context, id uint) error {
 	err := s.userRepository.Delete(ctx, id)
 	if err != nil {
 		return err
@@ -100,17 +100,17 @@ func (s *userService) DeleteUser(ctx context.Context, id *uint) error {
 	return nil
 }
 
-func (s *userService) LoginUser(ctx context.Context, user *dto.UserRequest) (*string, error) {
-	loginUser, err := s.userRepository.Login(ctx, &user.Username)
+func (s *userService) LoginUser(ctx context.Context, user *dto.UserRequest) (string, error) {
+	loginUser, err := s.userRepository.Login(ctx, user.Username)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if err := utils.CheckPassword(user.Password, loginUser.Password); err != nil {
-		return nil, err
+		return "", err
 	}
 
 	token := utils.GenerateToken(loginUser)
 
-	return &token, nil
+	return token, nil
 }

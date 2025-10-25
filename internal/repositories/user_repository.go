@@ -9,11 +9,11 @@ import (
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, username, hashedPassword *string) (*models.User, error)
+	Create(ctx context.Context, username, hashedPassword string) (*models.User, error)
 	GetAll(ctx context.Context) ([]*models.User, error)
-	Update(ctx context.Context, id *uint, username, hashedPassword *string) (*models.User, error)
-	Delete(ctx context.Context, id *uint) error
-	Login(ctx context.Context, username *string) (*models.User, error)
+	Update(ctx context.Context, id uint, username, hashedPassword string) (*models.User, error)
+	Delete(ctx context.Context, id uint) error
+	Login(ctx context.Context, username string) (*models.User, error)
 }
 
 type userRepository struct {
@@ -24,10 +24,10 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) Create(ctx context.Context, username, hashedPassword *string) (*models.User, error) {
+func (r *userRepository) Create(ctx context.Context, username, hashedPassword string) (*models.User, error) {
 	newUser := models.User{
-		Username: *username,
-		Password: *hashedPassword,
+		Username: username,
+		Password: hashedPassword,
 	}
 
 	err := r.db.WithContext(ctx).Create(&newUser).Error
@@ -49,7 +49,7 @@ func (r *userRepository) GetAll(ctx context.Context) ([]*models.User, error) {
 	return users, nil
 }
 
-func (r *userRepository) Update(ctx context.Context, id *uint, username, hashedPassword *string) (*models.User, error) {
+func (r *userRepository) Update(ctx context.Context, id uint, username, hashedPassword string) (*models.User, error) {
 	var userToUpdate models.User
 	findResult := r.db.WithContext(ctx).First(&userToUpdate, id)
 
@@ -62,8 +62,8 @@ func (r *userRepository) Update(ctx context.Context, id *uint, username, hashedP
 
 	// 2. Tentukan data baru untuk update
 	updateData := models.User{
-		Username: *username,
-		Password: *hashedPassword,
+		Username: username,
+		Password: hashedPassword,
 	}
 
 	result := r.db.WithContext(ctx).Where("id = ?", id).Updates(updateData)
@@ -84,7 +84,7 @@ func (r *userRepository) Update(ctx context.Context, id *uint, username, hashedP
 
 	return &updatedUser, nil
 }
-func (r *userRepository) Delete(ctx context.Context, id *uint) error {
+func (r *userRepository) Delete(ctx context.Context, id uint) error {
 	err := r.db.WithContext(ctx).Where("id = ?", id).Delete(&models.User{}).Error
 	if err != nil {
 		return err
@@ -93,7 +93,7 @@ func (r *userRepository) Delete(ctx context.Context, id *uint) error {
 	return nil
 }
 
-func (r *userRepository) Login(ctx context.Context, username *string) (*models.User, error) {
+func (r *userRepository) Login(ctx context.Context, username string) (*models.User, error) {
 	var user models.User
 	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
 	if err != nil {
