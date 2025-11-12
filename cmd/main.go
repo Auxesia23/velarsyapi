@@ -45,11 +45,11 @@ func main() {
 	userHandler := handlers.NewUserHandler(userService)
 
 	cfg := config{
-		name:         "Velarsy API",
-		port:         "8080",
-		readTimeout:  5 * time.Second,
-		writeTimeout: 5 * time.Second,
-		idleTimeout:  10 * time.Second,
+		name:               "Velarsy API",
+		port:               "8000",
+		readTimeout:        5 * time.Second,
+		writeTimeout:       5 * time.Second,
+		idleTimeout:        10 * time.Second,
 		maxRequestBodySize: 50 * 1024 * 1024,
 	}
 	app := NewApplication(cfg, serviveHandler, workHandler, projectHandler, imageHandler, userHandler)

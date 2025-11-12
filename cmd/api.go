@@ -8,6 +8,8 @@ import (
 	"github.com/Auxesia23/velarsyapi/internal/middlewares"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/valyala/fasthttp"
 )
 
@@ -52,6 +54,8 @@ func (app *application) mount() fasthttp.RequestHandler {
 		AllowOrigins: "*",
 		AllowHeaders: "*",
 	}))
+	r.Use(recover.New())
+	r.Get("/metrics", monitor.New(monitor.Config{Title: "VelarsyApi Metrics Page"}))
 
 	users := r.Group("/auth")
 	{
